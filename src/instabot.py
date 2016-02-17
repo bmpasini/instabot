@@ -18,6 +18,7 @@ class InstaBot(object):
         self.logger.log('InstaBot v0.1 started at %s:' % (start_time.strftime("%d.%m.%Y %H:%M")))
         self.total_likes = total_likes
         self.likes_per_user = likes_per_user
+        self.liked_photos = set()
         self.session = Session(username, password, self.logger)
         self.run(username, password, tags)
         self.session.logout()
@@ -57,7 +58,7 @@ class InstaBot(object):
                 photo_id = photo_json['code']
                 likes = photo_json['likes']['count']
                 comments = photo_json['comments']['count']
-                if (likes >= min_likes and likes <= max_likes) or (comments >= min_comments and comments <= max_comments):
+                if photo_id not in self.liked_photos and ((likes >= min_likes and likes <= max_likes) or (comments >= min_comments and comments <= max_comments)):
                     photos.append(photo_id)
                     if len(photos) == 10:
                         break
@@ -68,7 +69,7 @@ class InstaBot(object):
                     photo_id = photo_json['code']
                     likes = photo_json['likes']['count']
                     comments = photo_json['comments']['count']
-                    if (likes >= min_likes and likes <= max_likes) or (comments >= min_comments and comments <= max_comments):
+                    if photo_id not in self.liked_photos and ((likes >= min_likes and likes <= max_likes) or (comments >= min_comments and comments <= max_comments)):
                         photos.append(photo_id)
                         if len(photos) == 10:
                             break
@@ -117,8 +118,11 @@ class InstaBot(object):
                 for i, photo_json in enumerate(photos_json):
                     if i == self.likes_per_user:
                         break
-                    photos.append(photo_json['id']) # 'id' and not 'code'
-                    log_str += photo_json['code'] + ' '
+                    photo_id = photo_json['id']
+                    photo_code = photo_json['code']
+                    if photo_id not in self.liked_photos:
+                        photos.append(photo_id)
+                        log_str += photo_code + ' '
                 self.logger.log(log_str)
                 self.logger.log('Photo IDs: ' + str(photos))
             else:
@@ -168,6 +172,7 @@ class InstaBot(object):
                 for photo_id in like_next:
                     status = self.like(photo_id)
                     if status == 200:
+                        self.liked_photos.add(photo_id)
                         likes += 1
                         if likes > self.total_likes:
                             self.logging.log('Success! Reached total number of likes. InstaBot is shutting down...')
