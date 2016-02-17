@@ -1,4 +1,4 @@
-import requests, random
+import requests, random, time
 from URL import URL
 
 class Session(object):
