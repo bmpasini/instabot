@@ -1,0 +1,7 @@
+CREDENTIALS:
+  USERNAME: 'USERNAME'
+  PASSWORD: 'PASSWORD'
+TAGS: [ 'lookdodia', 'liketkit', 'aritzia', 'everlane', 'everydaymadewell', 'aerolook', 'uoonyou', 'loveuo', 'uoaroundyou', 'ootd' ]
+TOTAL_LIKES: 1000
+LIKES_PER_USER: 10
+LOG_FILE_PATH: null
