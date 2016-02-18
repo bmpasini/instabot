@@ -16,7 +16,7 @@ class InstaBot(object):
         self.logger = Logger(username, log_file_path)
         self.logger.log('InstaBot v0.1 started at %s:' % (start_time.strftime("%d.%m.%Y %H:%M")))
         self.total_likes = total_likes + self.iround(min(total_likes/2, max(0, random.gauss(0, 100)))) # gaussian distribution: mu = 0, sig = 100, round to nearest int
-        self.logger.log('InstaBot v0.1 will like ' + self.total_likes + ' photos in total'))
+        self.logger.log('InstaBot v0.1 will like ' + str(self.total_likes) + ' photos in total'))
         self.likes_per_user = likes_per_user
         self.liked_photos = set()
         self.session = Session(username, password, self.logger)
@@ -183,7 +183,7 @@ class InstaBot(object):
             if not self.session.login_status:
                 self.session.login()
             while len(like_queue) > 0:
-                self.logger.log('There are ' + str(len(like_queue)) + ' elements in the like queue')
+                self.logger.log('There are ' + str(len(like_queue)) + ' photos in the like queue')
                 likes_per_cycle = self.iround(min(20, max(0, random.gauss(10, 2)))) # gaussian distribution: mu = 10, sig = 2, round to nearest int
                 like_next, like_queue = like_queue[:likes_per_cycle], like_queue[likes_per_cycle:]
                 for photo_id in like_next:

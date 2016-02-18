@@ -3,8 +3,8 @@ InstaBot
 
 This Instagram bot was developed with the purpose of making your Instagram profile more visible to people with similar interests.
 The strategy is straight-forward, but effective. The bot will visit hashtag pages of your choice and select photos that meet a certain
-criteria. Then the bot visits the owner of these photos and if the owner meets the 2nd criteria, the bot will like its first 10 photos
-(you can choose how many photos).
+criteria. Then the bot visits the owner of these photos and if the owner meets the 2nd criteria, the bot will like its first 7 photos
+(you can choose the number).
 
 Criterias:
 
@@ -36,7 +36,7 @@ CREDENTIALS:
   PASSWORD: 'PASSWORD'
 TAGS: [ 'soccer', 'food', 'dog' ]
 TOTAL_LIKES: 1000
-LIKES_PER_USER: 10
+LIKES_PER_USER: 7
 ```
 
 - `CREDENTIALS`: Your login info.

@@ -1,7 +1,3 @@
-yaml
+pyyaml
 requests
-random
-time
-datetime
-json
-logging
+simplejson
