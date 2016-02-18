@@ -10,13 +10,14 @@ Criterias:
 
 1) The photo must have at least 5 likes or 1 comment, but less than 500 likes and 50 comments.
 
-2) The owner of the photo must have at least 1000 followers and must also follows more than 1000 people. The bot also disregard people
-with more than 50,000 followers, as these people most likely will not follow you just because you liked their photo.
+2) The owner of the photo must have at least 300 followers and follow more than 300 people. The bot disregard people with more than
+50,000 followers, as these people most likely will not follow you just because you liked their photo. The bot doesn't follow people
+with a followed_by / follows ratio greater than 4.0 or lower than 0.05.
 
 Other considerations:
 
-- This bot is polite, in the sense that it has some delay between Instagram requests. It tries to behave as a normal user.
-- This bot doesn't use the Instagram API. It just needs your username and password. The API sucks for Sandbox users!
+- This bot is polite, as it has delays between Instagram requests. It aims to behave as a normal user would.
+- This bot does not use the Instagram API. It just needs a username and password. The API sucks for Sandbox users!
 
 ##Setup
 Clone this repository:
@@ -36,17 +37,21 @@ CREDENTIALS:
 TAGS: [ 'soccer', 'food', 'dog' ]
 TOTAL_LIKES: 1000
 LIKES_PER_USER: 10
-LOG_FILE_PATH: null
 ```
 
 - `CREDENTIALS`: Your login info.
 - `TAGS`: Insert the hashtags you want to target, using the format shown above.
-- `TOTAL_LIKES`: The number of likes you wish to make in one run of the bot. My suggestion is to not like more than 1000 per day, as
-Instagram may suspect your activities and potentially delete your account.
+- `TOTAL_LIKES`: The number of likes you wish to make in one run of the bot. My suggestion is to not choose a value greater than 1000, as
+Instagram may suspect your activities and delete your account.
 - `LIKES_PER_USER`: Number of photos you want to like for each potential follower.
-- `LOG_FILE_PATH`: Leave it `null` if you want it to just print to the console. Otherwise, specify a log path.
 
 Then run:
 ```
 python3 src/instabot.py
+```
+
+You may also pass in the path of a log file, for a personalized log:
+
+```
+python3 src/instabot.py <log_file_path>
 ```

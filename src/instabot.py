@@ -1,33 +1,37 @@
-import yaml, requests, random, time, datetime, json
+import yaml, requests, random, time, datetime, json, sys
 from logger import Logger
 from session import Session
 from URL import URL
 
 requests.packages.urllib3.disable_warnings()
-TIME_BETWEEN_REQUESTS = 2 # seconds
 WAIT_SERVER_RESPONSE_TIME = 10 # how long to wait for a server response // 10s a 30s
 
 class InstaBot(object):
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, log_file_path=None):
         start_time = datetime.datetime.now()
         config = yaml.safe_load(open(config_path, "r"))
-        username, password, tags, total_likes, likes_per_user, log_file_path = (config['CREDENTIALS']['USERNAME'], config['CREDENTIALS']['PASSWORD'],
-                                                                                config['TAGS'], config['TOTAL_LIKES'], config['LIKES_PER_USER'], config['LOG_FILE_PATH'])
+        username, password, tags, total_likes, likes_per_user = (config['CREDENTIALS']['USERNAME'], config['CREDENTIALS']['PASSWORD'],
+                                                                 config['TAGS'], config['TOTAL_LIKES'], config['LIKES_PER_USER'])
         self.logger = Logger(username, log_file_path)
         self.logger.log('InstaBot v0.1 started at %s:' % (start_time.strftime("%d.%m.%Y %H:%M")))
-        self.total_likes = total_likes
+        self.total_likes = total_likes + self.iround(min(total_likes/2, max(0, random.gauss(0, 100)))) # gaussian distribution: mu = 0, sig = 100, round to nearest int
+        self.logger.log('InstaBot v0.1 will like ' + self.total_likes + ' photos in total'))
         self.likes_per_user = likes_per_user
         self.liked_photos = set()
         self.session = Session(username, password, self.logger)
         self.run(username, password, tags)
         self.session.logout()
+        end_time = datetime.datetime.now()
+        self.logger.log('InstaBot v0.1 stopped at %s:' % (end_time.strftime("%d.%m.%Y %H:%M")))
+        self.logger.log('InstaBot v0.1 took ' + str(end_time-start_time) + ' in total')
 
     def get_html(self, url):
-        self.logger.log('Fetching: ' + url)
+        time_between_requests = random.randint(2,5)
+        self.logger.log('Fetching ' + url)
         response = requests.get(url, verify=False, timeout=WAIT_SERVER_RESPONSE_TIME)
         html = response.text
-        time.sleep(TIME_BETWEEN_REQUESTS)
+        time.sleep(time_between_requests)
         return html
 
     def get_data_from_html(self, html):
@@ -86,7 +90,7 @@ class InstaBot(object):
             owner_name = data['entry_data']['PostPage'][0]['media']['owner']['username']
             return owner_name
         except (KeyError, IndexError) as e:
-            self.logger.log('Error parsing url: ' + url + ' - ' + str(e))
+            self.logger.log('Error parsing url: ' + photo_url + ' - ' + str(e))
             time.sleep(10)
             return None
 
@@ -101,18 +105,25 @@ class InstaBot(object):
     # get owner recent photos only if he/she meets requirements
     def get_owner_recent_photos(self, owner_name):
         photos = list()
-        min_followed_by = 1000
+        min_followed_by = 300
         max_followed_by = 50000
-        min_follows = 1000
-        max_follows = 100000000
+        min_follows = 300
+        max_follows = 7500 # instagram limit
+        min_follow_ratio = 0.05
+        max_follow_ratio = 4.0
         owner_url = URL.root + owner_name
         html = self.get_html(owner_url)
         try:
             data = self.get_data_from_html(html)
             follows = data['entry_data']['ProfilePage'][0]['user']['follows']['count']
             followed_by = data['entry_data']['ProfilePage'][0]['user']['followed_by']['count']
-            if follows >= min_follows and follows <= max_follows and followed_by >= min_followed_by and followed_by <= max_followed_by:
-                self.logger.log('Fetching user [' + owner_name + '] photo urls. (Follows: ' + str(follows) + ', Followed By: ' + str(followed_by) + ')')
+            if follows == 0:
+                follows = 1
+            follow_ratio = followed_by / follows
+            if (follows >= min_follows and follows <= max_follows and
+                followed_by >= min_followed_by and followed_by <= max_followed_by and
+                follow_ratio >= min_follow_ratio and follow_ratio <= max_follow_ratio):
+                self.logger.log('Fetching user [' + owner_name + '] photo urls. (Follows: ' + str(follows) + ', Followed By: ' + str(followed_by) + ', Ratio: ' + str(follow_ratio) + ')')
                 photos_json = data['entry_data']['ProfilePage'][0]['user']['media']['nodes']
                 log_str = 'Photo codes: '
                 for i, photo_json in enumerate(photos_json):
@@ -137,7 +148,8 @@ class InstaBot(object):
         recent_photos = self.get_recent_tag_photos(tag)
         for recent_photo in recent_photos:
             owner_name = self.get_photo_owner(recent_photo)
-            photos_to_like += self.get_owner_recent_photos(owner_name)
+            if owner_name is not None:
+                photos_to_like += self.get_owner_recent_photos(owner_name)
         return photos_to_like
 
     def get_photos_to_like(self, tags):
@@ -145,6 +157,7 @@ class InstaBot(object):
         for tag in tags:
             self.logger.log('Finding photos with tag: #' + tag)
             photos_to_like += self.get_photos_to_like_from_tag(tag)
+            self.logger.log('There are ' + str(len(photos_to_like)) + ' photos in the like queue')
         return photos_to_like
 
     def like(self, photo_id):
@@ -157,9 +170,11 @@ class InstaBot(object):
                 self.logger.log("Like failed: " + url)
             return status
 
+    def iround(self, x):
+        return int(round(x) - .5) + (x > 0) # round a number to the nearest integer
+
     def run(self, login, password, tags):
         likes = 0
-        likes_per_cycle = 30
         error_400 = 0
         error_400_to_ban = 3
         ban_sleep_time = 2*60*60
@@ -168,6 +183,8 @@ class InstaBot(object):
             if not self.session.login_status:
                 self.session.login()
             while len(like_queue) > 0:
+                self.logger.log('There are ' + str(len(like_queue)) + ' elements in the like queue')
+                likes_per_cycle = self.iround(min(20, max(0, random.gauss(10, 2)))) # gaussian distribution: mu = 10, sig = 2, round to nearest int
                 like_next, like_queue = like_queue[:likes_per_cycle], like_queue[likes_per_cycle:]
                 for photo_id in like_next:
                     status = self.like(photo_id)
@@ -175,8 +192,8 @@ class InstaBot(object):
                         self.liked_photos.add(photo_id)
                         likes += 1
                         if likes > self.total_likes:
-                            self.logging.log('Success! Reached total number of likes. InstaBot is shutting down...')
-                            return None
+                            self.logger.log('Success! Reached total number of likes. InstaBot is shutting down...')
+                            return
                         error_400 = 0
                         self.logger.log('Total likes: ' + str(likes))
                     elif status == 400:
@@ -184,19 +201,24 @@ class InstaBot(object):
                             error_400 += 1
                             self.logger.log('Error 400 - # ' + str(error_400))
                         else:
-                            self.logger.log('Error 400 - # ' + str(error_400) + '- You might have been banned. InstaBot will sleep for 2 hours.')
+                            self.logger.log('Error 400 - # ' + str(error_400) + '- You might have been banned. InstaBot will sleep for 2 hours...')
                             time.sleep(ban_sleep_time)
-                    # sleep after one like (from 1s to 3s)
-                    wait = random.randint(1,3)
+                    # sleep after one like (from 2s to 5s)
+                    wait = random.randint(2,5)
                     time.sleep(wait)
-                # sleep after liking cycle (from 45s to 75s)
-                wait = random.randint(45,75)
-                self.logger.log('Finished liking cycle. Sleeping for ' + wait + ' seconds...')
+                # sleep after liking cycle (from 25s to 50s)
+                wait = random.randint(25,50)
+                self.logger.log('Finished liking cycle. Sleeping for ' + str(wait) + ' seconds...')
                 time.sleep(wait)
-            # sleep after liking all tags (from 20min to 40min)
-            wait = random.randint(20,40)*60
-            self.logger.log('Finished liking tags. Sleeping for ' + wait/60 + ' minutes...')
+            # sleep after liking all tags (from 5min to 15min)
+            wait = random.randint(5,15)*60
+            self.logger.log('Finished liking tags. Sleeping for ' + str(int(wait/60)) + ' minutes...')
             time.sleep(wait)
 
 if __name__ == "__main__":
-    bot = InstaBot('../config/config.yml')
+    try:
+        InstaBot('config/config.yml', sys.argv[1])
+    except IndexError:
+        InstaBot('config/config.yml')
+    
+

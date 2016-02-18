@@ -14,6 +14,10 @@ class Session(object):
         self.logger = logger
         self.login_status = False
 
+    def __del__(self):
+        if self.login_status:
+            self.logout()
+
     def login(self):
         self.log('User: %s --> Login attempt...' % (self.user_login))
         self.session.cookies.update ({ 'sessionid' : ''    , 'mid'        : '', 'ig_pr' : '1',
