@@ -1,3 +1,0 @@
-rsync -avL --progress -e 'ssh -i /Users/brunomacedo/.ssh/aws-ec2.pem' /Users/brunomacedo/code/side-projects/instagram/instabot/src/ ec2-user@ec2-52-38-38-23.us-west-2.compute.amazonaws.com:/home/ec2-user/src/
-rsync -avL --progress -e 'ssh -i /Users/brunomacedo/.ssh/isa-ec2.pem' /Users/brunomacedo/code/side-projects/instagram/instabot/src/ ec2-user@ec2-52-90-164-231.compute-1.amazonaws.com:/home/ec2-user/src/
-# 00 00 * * * /home/ec2-user/instabot/sh/run.sh
