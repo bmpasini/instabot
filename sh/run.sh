@@ -1,5 +1,5 @@
 DATETIME=$(date +"%Y%m%d%H%M%S")
-ROOT_PATH=/Users/brunomacedo/Desktop/Coding/side-projects/instagram/instabot
+ROOT_PATH=/Users/brunomacedo/code/side-projects/instagram/instabot
 LOG_PATH=$ROOT_PATH/logs/
 BOT_PATH=$ROOT_PATH/src/instabot.py
 PYTHON_PATH=/Library/Frameworks/Python.framework/Versions/3.5/bin/python3

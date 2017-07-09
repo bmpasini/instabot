@@ -37,11 +37,11 @@ class Session(object):
                                        'X-Requested-With' : 'XMLHttpRequest' })
         request = self.session.get(URL.root)
         self.session.headers.update({'X-CSRFToken' : request.cookies['csrftoken']})
-        time.sleep(5 * random.random())
+        time.sleep(random.randint(2,5))
         login = self.session.post(URL.login, data=self.login_post, allow_redirects=True)
         self.session.headers.update({'X-CSRFToken' : login.cookies['csrftoken']})
         self.csrftoken = login.cookies['csrftoken']
-        time.sleep(5 * random.random())
+        time.sleep(random.randint(2,5))
         if login.status_code == 200:
             request = self.session.get(URL.root)
             finder = request.text.find(self.user_login)
@@ -62,6 +62,11 @@ class Session(object):
         except:
             self.log("Error: Unsuccessful logout.")
 
+    def get(self, url):
+        response = self.session.get(url)
+        self.log("GET request to: " + url + " - Status: " + str(response.status_code))
+        return response.status_code
+
     def post(self, url):
         response = self.session.post(url)
         self.log("POST request to: " + url + " - Status: " + str(response.status_code))
@@ -72,4 +77,3 @@ class Session(object):
             self.logger.log(text)
         else:
             print(text)
-
